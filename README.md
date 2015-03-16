@@ -29,10 +29,14 @@ Prerequisites
 
 ### Tool requirements
 
+This kit needs the following commands;
+
+- rake
 - Terraform
 - Packer
 - jq
 
+If you don't have these tools, the script `./install-tools.sh` may be helpful for installation.
 
 Tasks
 ------
