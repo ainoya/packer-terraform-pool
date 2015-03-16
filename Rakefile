@@ -20,32 +20,46 @@ require 'erb'
   github_bot:              ENV['GITHUB_BOT'] || 'false'
 }
 
+def terraform(task)
+  cmd = %Q(terraform #{task} -input=false \
+              -var "aws_access_key=#{@access_key}" \
+              -var "aws_secret_key=#{@secret_key}" \
+              -var "ami=#{@ami_id}" \
+              -var "prod.sg_id=#{@tfvars[:sg_id]}" \
+              -var "prod.region=#{@tfvars[:region]}" \
+              -var "prod.subnet_id=#{@tfvars[:subnet_id]}" )
+   cmd += case task
+          when 'plan'
+            '-out plan'
+          when 'apply'
+            '< plan'
+          when 'destroy'
+            ''
+          else
+            raise 'invalid task'
+          end
+   sh cmd
+end
+
 task :plan => :cloud_config do
   @ami_id = File.readlines('ami-id').first.chomp
   Dir.chdir("terraform") do
-    sh %Q(terraform plan -input=false \
-          -var "aws_access_key=#{@access_key}" \
-          -var "aws_secret_key=#{@secret_key}" \
-          -var "ami=#{@ami_id}" \
-          -var "prod.sg_id=#{@tfvars[:sg_id]}" \
-          -var "prod.region=#{@tfvars[:region]}" \
-          -var "prod.subnet_id=#{@tfvars[:subnet_id]}" \
-          -out plan)
+    terraform("plan")
   end
 end
 
 task :apply => :plan do
   @ami_id = File.readlines('ami-id').first.chomp
   Dir.chdir("terraform") do
-    sh %Q(terraform apply -input=false \
-          -var "aws_access_key=#{@access_key}" \
-          -var "aws_secret_key=#{@secret_key}" \
-          -var "ami=#{@ami_id}" \
-          -var "prod.sg_id=#{@tfvars[:sg_id]}" \
-          -var "prod.region=#{@tfvars[:region]}" \
-          -var "prod.subnet_id=#{@tfvars[:subnet_id]}" \
-          < plan)
+    terraform("apply")
     puts "discovery url: #{@discovery_url}"
+  end
+end
+
+task :destroy do
+  @ami_id = File.readlines('ami-id').first.chomp
+  Dir.chdir("terraform") do
+    terraform("destroy")
   end
 end
 
