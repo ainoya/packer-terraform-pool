@@ -23,11 +23,12 @@ coreos:
       content: |
         [Unit]
         Description=Install pool package
+        Requires=docker.service
 
         [Service]
         Type=oneshot
         ExecStart=/usr/bin/git clone https://github.com/mookjp/pool.git /app
-        ExecStart=/bin/sh -c 'cd /app/docker/pool && docker build -t pool-server .'
+        ExecStart=/bin/sh -c 'cd /app/docker/pool && /opt/latest/bin/docker build -t pool-server .'
     - name: pool.service
       command: start
       content: |
