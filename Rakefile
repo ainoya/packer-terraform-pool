@@ -1,3 +1,5 @@
+require 'erb'
+
 @access_key = ENV['AWS_ACCESS_KEY_ID']
 @secret_key = ENV['AWS_SECRET_ACCESS_KEY']
 @region     = ENV['AWS_DEFAULT_REGION']
@@ -34,6 +36,8 @@ end
 
 task :ami => :coreos_hvm_ami_id do
   Dir.chdir("packer") do
+    File.write('./core.json', ERB.new(File.read('./core.json.erb')).result(binding))
+
     sh %Q(cd packer && packer build -machine-readable \
           -var "aws_access_key=#{@access_key}" \
           -var "aws_secret_key=#{@secret_key}" \
