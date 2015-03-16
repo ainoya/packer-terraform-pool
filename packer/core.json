@@ -1,0 +1,37 @@
+{
+  "variables": {
+    "aws_access_key": "",
+    "aws_secret_key": "",
+    "source_ami": "",
+    "subnet_id" : "",
+    "region": "us-east-1",
+    "security_group_id": ""
+  },
+  "builders": [{
+    "type": "amazon-ebs",
+    "access_key": "{{user `aws_access_key`}}",
+    "secret_key": "{{user `aws_secret_key`}}",
+    "region": "{{user `region`}}",
+    "source_ami": "{{user `source_ami`}}",
+    "instance_type": "m3.medium",
+    "ssh_username": "core",
+    "ami_name": "management_host {{timestamp}}",
+    "subnet_id": "{{user `subnet_id`}}",
+    "ami_virtualization_type": "hvm",
+    "security_group_id": "{{user `security_group_id`}}",
+    "ami_block_device_mappings": [
+        {
+           "device_name": "/dev/xvda",
+           "volume_size": 200,
+           "delete_on_termination": true
+        }
+    ]
+  }],
+  "provisioners": [
+      {
+          "type": "shell",
+          "execute_command": "{{ .Vars }} sudo -E -S sh '{{ .Path }}'",
+          "script": "provisioners/coreos-init.sh"
+      }
+  ]
+}
