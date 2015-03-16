@@ -15,7 +15,7 @@
     "source_ami": "{{user `source_ami`}}",
     "instance_type": "m3.medium",
     "ssh_username": "core",
-    "ami_name": "management_host {{timestamp}}",
+    "ami_name": "pool CoreOS {{timestamp}}",
     "subnet_id": "{{user `subnet_id`}}",
     <%= %Q{"ssh_private_ip": #{@packer_ssh_private_ip},} if @packer_ssh_private_ip %>
     "ami_virtualization_type": "hvm",
