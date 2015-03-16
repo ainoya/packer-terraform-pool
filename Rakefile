@@ -63,6 +63,13 @@ task :destroy do
   end
 end
 
+task :show do
+  @ami_id = File.readlines('ami-id').first.chomp
+  Dir.chdir("terraform") do
+    sh %Q{terraform show}
+  end
+end
+
 task :discovery_url do
 	@discovery_url=`curl -s https://discovery.etcd.io/new?size=1`.chomp
   puts "discovery url: #{@discovery_url}"
