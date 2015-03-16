@@ -7,22 +7,57 @@ require 'erb'
 @security_group_id = ENV['AWS_PACKER_SG_ID']
 @packer_ssh_private_ip = ENV['PACKER_SSH_PRIVATE_IP']
 
+@tfvars = {
+  sg_id: ENV['TF_SG_ID'],
+  region: ENV['TF_REGION'] || ENV['AWS_DEFAULT_REGION'],
+  subnet_id: ENV['TF_SUBNET_ID'],
+}
+
+@pool = {
+  max_containers:          ENV['MAX_CONTAINERS'] || 10,
+  preview_repository_url:  ENV['PREVIEW_REPOSITORY_URL'] || 'http://github.com/mookjp/flaskapp.git',
+  pool_base_domain:        ENV['POOL_BASE_DOMAIN'] || 'pool.dev',
+  github_bot:              ENV['GITHUB_BOT'] || 'false'
+}
+
 task :plan => :cloud_config do
+  @ami_id = File.readlines('ami-id').first.chomp
   Dir.chdir("terraform") do
-    sh %Q(terraform plan -input=false -var "aws_access_key=#{@access_key}" -var "aws_secret_key=#{@secret_key}" -out plan)
+    sh %Q(terraform plan -input=false \
+          -var "aws_access_key=#{@access_key}" \
+          -var "aws_secret_key=#{@secret_key}" \
+          -var "ami=#{@ami_id}" \
+          -var "prod.sg_id=#{@tfvars[:sg_id]}" \
+          -var "prod.region=#{@tfvars[:region]}" \
+          -var "prod.subnet_id=#{@tfvars[:subnet_id]}" \
+          -out plan)
   end
 end
 
 task :apply => :plan do
   @ami_id = File.readlines('ami-id').first.chomp
   Dir.chdir("terraform") do
-    sh %Q(terraform apply -input=false -var "aws_access_key=#{@access_key}" -var "aws_secret_key=#{@secret_key}" -var "ami=#{@ami_id}" < plan)
-    puts @discovery_url
+    sh %Q(terraform apply -input=false \
+          -var "aws_access_key=#{@access_key}" \
+          -var "aws_secret_key=#{@secret_key}" \
+          -var "ami=#{@ami_id}" \
+          -var "prod.sg_id=#{@tfvars[:sg_id]}" \
+          -var "prod.region=#{@tfvars[:region]}" \
+          -var "prod.subnet_id=#{@tfvars[:subnet_id]}" \
+          < plan)
+    puts "discovery url: #{@discovery_url}"
   end
 end
 
+task :discovery_url do
+	@discovery_url=`curl -s https://discovery.etcd.io/new?size=1`.chomp
+  puts "discovery url: #{@discovery_url}"
+  File.write('./discovery_url', @discovery_url)
+end
+
 task :cloud_config => :discovery_url do
-	sh %Q(cat terraform/userdata/core-userdata.template | sed -e "s\#{{ discovery_url }}##{@discovery_url}#" -e "s\#{{ purpose_role }}#general#" > terraform/userdata/core-userdata)
+  userdata_path = './terraform/userdata/pool-userdata.yaml'
+  File.write(userdata_path, ERB.new(File.read("#{userdata_path}.erb")).result(binding))
 end
 
 task :clean do

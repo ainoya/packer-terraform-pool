@@ -1,0 +1,82 @@
+#cloud-config
+
+write_files:
+  - path: /etc/pool.env
+    permissions: 0644
+    owner: root
+    content: |
+      MAX_CONTAINERS=<%= @pool[:max_containers] %>
+      PREVIEW_REPOSITORY_URL=<%= @pool[:preview_repository_url] %>
+      POOL_BASE_DOMAIN=<%= @pool[:pool_base_domain] %>
+      GITHUB_BOT=<%= @pool[:github_bot] %>
+ 
+coreos:
+  etcd:
+    discovery: <%= @discovery_url %>
+    addr: $private_ipv4:2379
+    peer-addr: $private_ipv4:2380
+  fleet:
+    metadata: purpose=pool
+  units:
+    - name: install_pool.service
+      command: start
+      content: |
+        [Unit]
+        Description=Install pool package
+
+        [Service]
+        Type=oneshot
+        ExecStart=/usr/bin/git clone https://github.com/mookjp/pool.git /app
+        ExecStart=/bin/sh -c 'cd /app/docker/pool && docker build -t pool-server .'
+    - name: pool.service
+      command: start
+      content: |
+        [Unit]
+        Description=Pool service
+        Requires=install_pool.service
+        Requires=docker.service
+
+        [Service]
+        Environmentfile=/etc/pool.env
+        Restart=always
+        ExecStart=/opt/latest/bin/docker start -a -v /var/run/docker.sock:/var/run/docker.sock \
+                      --env MAX_CONTAINERS=${MAX_CONTAINERS} \
+                      --env PREVIEW_REPOSITORY_URL=${PREVIEW_REPOSITORY_URL} \
+                      --env POOL_BASE_DOMAIN=${POOL_BASE_DOMAIN} \
+                      --env GITHUB_BOT=${GITHUB_BOT} \
+                      --name pool -p 80:80 pool-server
+        ExecStop=/opt/latest/bin/docker stop -t 2 pool-server
+    - name: gen_uuid.service
+      command: start
+      content: |
+        [Unit]
+        Description=Generate Machine id
+
+        [Service]
+        Type=oneshot
+        ExecStart=/bin/sh -c '/usr/bin/echo "ETCD_NAME=$(/usr/bin/curl http://instance-data/1.0/meta-data/instance-id)" > /etc/core-id'
+        ExecStart=/bin/sh -c '/usr/bin/echo "$(/usr/bin/curl http://instance-data/1.0/meta-data/instance-id)" > /etc/machine-id'
+    - name: etcd.service
+      command: start
+      drop-ins:
+        - name: 15-etcd-2.0.conf
+          content: |
+            [Unit]
+            Requires=gen_uuid.service
+            [Service]
+            EnvironmentFile=/etc/core-id
+            Environment="ETCD_ADVERTIZE_CLIENT_URLS=http://$private_ipv4:2379"
+            Environment="ETCD_LISTEN_CLIENT_URLS=http://$private_ipv4:2379"
+            Environment="ETCD_INITIAL_ADVERTIZE_PEER_URLS=http://$private_ipv4:2380"
+            Environment="ETCD_LISTEN_PEER_URLS=http://$private_ipv4:2380"
+    - name: fleet.service
+      command: start
+      drop-ins:
+        - name: 30-etcd-2.0.conf
+          content: |
+            [Unit]
+            Requires=gen_uuid.service
+            [Service]
+            Environment="FLEET_ETCD_SERVERS=http://$private_ipv4:2379"
+    - name: docker.service
+      command: start

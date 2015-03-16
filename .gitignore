@@ -1,3 +1,7 @@
 packer/core.json
 ami-id
 build.log
+discovery_url
+**.yaml
+**.tfstate*
+**/plan
