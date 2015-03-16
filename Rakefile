@@ -5,6 +5,7 @@ require 'erb'
 @region     = ENV['AWS_DEFAULT_REGION']
 @subnet_id  = ENV['AWS_PACKER_SUBNET_ID']
 @security_group_id = ENV['AWS_PACKER_SG_ID']
+@packer_ssh_private_ip = ENV['PACKER_SSH_PRIVATE_IP']
 
 task :plan => :cloud_config do
   Dir.chdir("terraform") do
@@ -38,16 +39,16 @@ task :ami => :coreos_hvm_ami_id do
   Dir.chdir("packer") do
     File.write('./core.json', ERB.new(File.read('./core.json.erb')).result(binding))
 
-    sh %Q(cd packer && packer build -machine-readable \
+    sh %Q(packer build -machine-readable \
           -var "aws_access_key=#{@access_key}" \
           -var "aws_secret_key=#{@secret_key}" \
           -var "source_ami=#{@coreos_ami_id}" \
           -var "subnet_id=#{@subnet_id}" \
           -var "security_group_id=#{@security_group_id}" \
-          -var "region=#{@region}" core.json | tee ../../build.log)
+          -var "region=#{@region}" core.json | tee ../build.log)
   end
 
-	@ami_id=`grep 'artifact,0,id' build.log | cut -d, -f6 | cut -d: -f2`.chomp
+  @ami_id=`grep 'artifact,0,id' build.log | cut -d, -f6 | cut -d: -f2`.chomp
   File.write('ami-id', @ami_id)
   puts @ami_id
 end
