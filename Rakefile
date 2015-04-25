@@ -17,7 +17,8 @@ require 'erb'
   max_containers:          ENV['MAX_CONTAINERS'] || 10,
   preview_repository_url:  ENV['PREVIEW_REPOSITORY_URL'] || 'http://github.com/mookjp/flaskapp.git',
   pool_base_domain:        ENV['POOL_BASE_DOMAIN'] || 'pool.dev',
-  github_bot:              ENV['GITHUB_BOT'] || 'false'
+  github_bot:              ENV['GITHUB_BOT'] || 'false',
+  local_build:		   ENV['POOL_LOCAL_BUILD'] || false,
 }
 
 def terraform(task)

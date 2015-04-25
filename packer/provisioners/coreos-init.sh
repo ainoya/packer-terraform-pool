@@ -42,3 +42,5 @@ rm /home/core/.bashrc
 cat /usr/share/skel/.bashrc > /home/core/.bashrc
 echo 'export PATH=/opt/latest/bin:$PATH' >> /home/core/.bashrc
 
+/opt/latest/bin/docker -d &
+/opt/latest/bin/docker pull quay.io/ainoya/pool:latest && pkill docker

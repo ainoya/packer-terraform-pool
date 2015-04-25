@@ -18,6 +18,7 @@ coreos:
   fleet:
     metadata: purpose=pool
   units:
+<% if @pool[:local_build] %>
     - name: install_pool.service
       command: start
       content: |
@@ -29,16 +30,24 @@ coreos:
         Type=oneshot
         ExecStartPre=/usr/bin/git clone https://github.com/mookjp/pool.git /app
         ExecStart=/opt/latest/bin/docker build -t pool-server /app/docker/pool
+<% end %>
     - name: pool.service
       command: start
       content: |
         [Unit]
         Description=Pool service
+<% if @pool[:local_build] %>
         Requires=install_pool.service docker.service
-
+<% else %>
+        Requires=docker.service
+<% end %>
         [Service]
         Environmentfile=/etc/pool.env
         Restart=always
+<% unless @pool[:local_build] %>
+        ExecStartPre=-/opt/latest/bin/docker pull quay.io/ainoya/pool:latest
+        ExecStartPre=-/opt/latest/bin/docker tag -f quay.io/ainoya/pool:latest pool-server
+<% end %>
         ExecStart=/opt/latest/bin/docker start -a -v /var/run/docker.sock:/var/run/docker.sock \
                       --env MAX_CONTAINERS=${MAX_CONTAINERS} \
                       --env PREVIEW_REPOSITORY_URL=${PREVIEW_REPOSITORY_URL} \
