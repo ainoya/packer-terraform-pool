@@ -5,3 +5,4 @@ discovery_url
 **.yaml
 **.tfstate*
 **/plan
+.env.sh

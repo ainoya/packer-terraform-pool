@@ -1,15 +1,15 @@
 require 'erb'
 
-@access_key = ENV['AWS_ACCESS_KEY_ID']
-@secret_key = ENV['AWS_SECRET_ACCESS_KEY']
-@region     = ENV['AWS_DEFAULT_REGION']
-@subnet_id  = ENV['AWS_PACKER_SUBNET_ID']
-@security_group_id = ENV['AWS_PACKER_SG_ID']
+@access_key =            ENV['AWS_ACCESS_KEY_ID']
+@secret_key =            ENV['AWS_SECRET_ACCESS_KEY']
+@region     =            ENV['AWS_DEFAULT_REGION']
+@subnet_id  =            ENV['AWS_PACKER_SUBNET_ID']
+@security_group_id =     ENV['AWS_PACKER_SG_ID']
 @packer_ssh_private_ip = ENV['PACKER_SSH_PRIVATE_IP']
 
 @tfvars = {
-  sg_id: ENV['TF_SG_ID'],
-  region: ENV['TF_REGION'] || ENV['AWS_DEFAULT_REGION'],
+  sg_id:     ENV['TF_SG_ID'],
+  region:    ENV['TF_REGION'] || ENV['AWS_DEFAULT_REGION'],
   subnet_id: ENV['TF_SUBNET_ID'],
 }
 

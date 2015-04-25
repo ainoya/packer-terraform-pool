@@ -23,19 +23,18 @@ coreos:
       content: |
         [Unit]
         Description=Install pool package
-        Requires=docker.service
+        Requires=gen_uuid.service docker.service
 
         [Service]
         Type=oneshot
-        ExecStart=/usr/bin/git clone https://github.com/mookjp/pool.git /app
-        ExecStart=/bin/sh -c 'cd /app/docker/pool && /opt/latest/bin/docker build -t pool-server .'
+        ExecStartPre=/usr/bin/git clone https://github.com/mookjp/pool.git /app
+        ExecStart=/opt/latest/bin/docker build -t pool-server /app/docker/pool
     - name: pool.service
       command: start
       content: |
         [Unit]
         Description=Pool service
-        Requires=install_pool.service
-        Requires=docker.service
+        Requires=install_pool.service docker.service
 
         [Service]
         Environmentfile=/etc/pool.env
@@ -55,7 +54,7 @@ coreos:
 
         [Service]
         Type=oneshot
-        ExecStart=/bin/sh -c '/usr/bin/echo "ETCD_NAME=$(/usr/bin/curl http://instance-data/1.0/meta-data/instance-id)" > /etc/core-id'
+        ExecStartPre=/bin/sh -c '/usr/bin/echo "ETCD_NAME=$(/usr/bin/curl http://instance-data/1.0/meta-data/instance-id)" > /etc/core-id'
         ExecStart=/bin/sh -c '/usr/bin/echo "$(/usr/bin/curl http://instance-data/1.0/meta-data/instance-id)" > /etc/machine-id'
     - name: etcd.service
       command: start
@@ -76,7 +75,7 @@ coreos:
         - name: 30-etcd-2.0.conf
           content: |
             [Unit]
-            Requires=gen_uuid.service
+            Requires=etcd.service
             [Service]
             Environment="FLEET_ETCD_SERVERS=http://$private_ipv4:2379"
     - name: docker.service
