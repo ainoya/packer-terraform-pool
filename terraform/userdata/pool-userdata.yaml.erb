@@ -45,10 +45,12 @@ coreos:
         Environmentfile=/etc/pool.env
         Restart=always
 <% unless @pool[:local_build] %>
-        ExecStartPre=-/opt/latest/bin/docker pull quay.io/ainoya/pool:latest
-        ExecStartPre=-/opt/latest/bin/docker tag -f quay.io/ainoya/pool:latest pool-server
+        ExecStartPre=/opt/latest/bin/docker pull quay.io/ainoya/pool:latest
+        ExecStartPre=/opt/latest/bin/docker tag -f quay.io/ainoya/pool:latest pool-server
 <% end %>
-        ExecStart=/opt/latest/bin/docker start -a -v /var/run/docker.sock:/var/run/docker.sock \
+        ExecStartPre=-/opt/latest/bin/docker kill pool-server
+        ExecStartPre=-/opt/latest/bin/docker rm pool-server
+        ExecStart=/opt/latest/bin/docker run -v /var/run/docker.sock:/var/run/docker.sock \
                       --env MAX_CONTAINERS=${MAX_CONTAINERS} \
                       --env PREVIEW_REPOSITORY_URL=${PREVIEW_REPOSITORY_URL} \
                       --env POOL_BASE_DOMAIN=${POOL_BASE_DOMAIN} \
