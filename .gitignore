@@ -6,3 +6,4 @@ discovery_url
 **.tfstate*
 **/plan
 .env.sh
+.env
