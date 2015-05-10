@@ -6,7 +6,9 @@ mkdir -p /opt/latest/bin
 
 echo "Updating to latest docker.."
 wget -q https://get.docker.com/builds/Linux/x86_64/docker-latest -O /opt/latest/bin/docker
+
 chmod +x /opt/latest/bin/docker
+
 cat << EOF > /etc/systemd/system/docker.service
 .include /usr/lib/systemd/system/docker.service
 
@@ -42,5 +44,13 @@ rm /home/core/.bashrc
 cat /usr/share/skel/.bashrc > /home/core/.bashrc
 echo 'export PATH=/opt/latest/bin:$PATH' >> /home/core/.bashrc
 
-/opt/latest/bin/docker -d &
-/opt/latest/bin/docker pull quay.io/ainoya/pool:latest && pkill docker
+systemctl daemon-reload
+systemctl start docker
+
+for image in "quay.io/ainoya/pool:latest" "ubuntu:14.04" "rails:onbuild"; do
+    /opt/latest/bin/docker pull ${image}
+done
+
+systemctl stop docker
+
+
