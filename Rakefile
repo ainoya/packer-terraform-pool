@@ -7,6 +7,9 @@ require 'erb'
 @security_group_id =     ENV['AWS_PACKER_SG_ID']
 @packer_ssh_private_ip = ENV['PACKER_SSH_PRIVATE_IP']
 
+@prepared_images = ['quay.io/ainoya/pool:latest']
+@prepared_images << ENV['POOL_PREPARED_IMAGES'].strip.split(',') if ENV['POOL_PREPARED_IMAGES']
+
 @tfvars = {
   sg_id:     ENV['TF_SG_ID'],
   region:    ENV['TF_REGION'] || ENV['AWS_DEFAULT_REGION'],
@@ -95,6 +98,8 @@ end
 task :ami => :coreos_hvm_ami_id do
   Dir.chdir("packer") do
     File.write('./core.json', ERB.new(File.read('./core.json.erb')).result(binding))
+    File.write('./provisioners/coreos-init.sh',
+               ERB.new(File.read('./provisioners/coreos-init.sh.erb')).result(binding))
 
     sh %Q(packer build -machine-readable \
           -var "aws_access_key=#{@access_key}" \
