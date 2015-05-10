@@ -1,4 +1,5 @@
 packer/core.json
+packer/provisioners/coreos-init.sh
 ami-id
 build.log
 discovery_url

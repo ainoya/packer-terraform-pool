@@ -47,7 +47,7 @@ echo 'export PATH=/opt/latest/bin:$PATH' >> /home/core/.bashrc
 systemctl daemon-reload
 systemctl start docker
 
-for image in "quay.io/ainoya/pool:latest" "ubuntu:14.04" "rails:onbuild"; do
+for image in <%= "\"#{@prepared_images.join('" "')}\"" %>; do
     /opt/latest/bin/docker pull ${image}
 done
 
